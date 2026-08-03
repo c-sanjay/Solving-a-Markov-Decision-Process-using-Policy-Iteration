@@ -130,34 +130,92 @@ If the improved policy is the same as the old policy, the policy is considered s
 # Policy Evaluation
 # -------------------------------------------------
 
+def policy_evaluation(policy, env, gamma, theta, max_iter=1000):
+    """
+    Evaluate a given policy by iteratively updating the state-value function.
+    """
+    V = np.zeros(n_states)
 
+    for _ in range(max_iter):
+        delta = 0.0
+
+        for state in range(n_states):
+            v_state = 0.0
+
+            for action, action_prob in enumerate(policy[state]):
+                for probability, next_state, reward, terminated in env.P[state][action]:
+                    v_state += action_prob * probability * (
+                        reward + gamma * V[next_state] * (not terminated)
+                    )
+
+            delta = max(delta, abs(v_state - V[state]))
+            V[state] = v_state
+
+        if delta < theta:
+            break
+    return V
 
 # -------------------------------------------------
 # Policy Improvement
 # -------------------------------------------------
+def policy_improvement(env, V, gamma):
+    """
+    Improve the policy greedily with respect to the current value function.
+    """
+    policy = np.zeros((n_states, n_actions))
+
+    for state in range(n_states):
+        action_values = one_step_lookahead(env, state, V, gamma)
+        best_action = np.argmax(action_values)
+        policy[state, best_action] = 1.0
+
+    return policy
 
 #-------------------------------------------------
 # Policy Iteration
 # -------------------------------------------------
+def policy_iteration(env, gamma, theta, max_iterations=1000):
+    """
+    Run policy iteration until the policy converges.
+    """
+    policy = np.ones((n_states, n_actions)) / n_actions
+    V = np.zeros(n_states)
+    print("-------------------------------------------------")
+    print("Before Policy Iteration:")
+    print("-------------------------------------------------")
+    print_value_function(V)
 
+    for iteration in range(max_iterations):
+        V = policy_evaluation(policy, env, gamma, theta)
+        new_policy = policy_improvement(env, V, gamma)
 
+        if np.allclose(policy, new_policy):
+            print(f"Policy iterations: {iteration + 1}")
+            print("-------------------------------------------------")
+            print("After Policy Iteration :")
+            print("-------------------------------------------------")
+            print_value_function(V)
+            print_policy(policy)
+            return new_policy, V
+
+        policy = new_policy
+        print(f"Policy iterations: {iteration +1}")
+        print_value_function(V)
+        print_policy(policy)
+        print()
+
+    print_value_function(V)
+    return policy, V
 
 
 ```
 
 ## Output
 
-```text
-
-Total policy iterations: 
-
-Optimal State-Value Function:
+<img width="446" height="571" alt="image" src="https://github.com/user-attachments/assets/febc88dc-9a72-42a7-a747-dc4d54cbe023" />
 
 
-Optimal Policy:
-
-```
-
+<img width="408" height="533" alt="image" src="https://github.com/user-attachments/assets/d0d91a4d-814e-4398-bb50-f0596c031ac0" />
 
 
 ---
@@ -165,6 +223,8 @@ Optimal Policy:
 ## Result
 
 ```text
+
+The Policy Iteration algorithm was successfully implemented. The algorithm repeatedly performed Policy Evaluation and Policy Improvement until the policy became stable.  
 
 
 
@@ -174,6 +234,7 @@ Optimal Policy:
 ## Inference
 ```text
 
+Policy Iteration is an efficient dynamic programming algorithm for solving Markov Decision Processes. It alternates between evaluating the current policy and improving it until convergence.
 
 ```
 ---
